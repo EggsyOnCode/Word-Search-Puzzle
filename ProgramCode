@@ -1,0 +1,378 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <stdbool.h>
+
+int dir, pos_x, pos_y;
+int *ptr_1 = &dir;
+int *ptr_2 = &pos_x;
+int *ptr_3 = &pos_y;
+
+// function prototypes
+void init_words(char **words, int n);
+void display_words(char **words, int n);
+void generate_grid(int row, int col, char grid[row][col]);
+void display_grid(int row, int col, char grid[row][col]);
+void rand_val(int row, int col);
+void rand_fill(int row, int col, char grid[row][col]);
+bool is_placable(int *ptr_1, int *ptr_2, int *ptr_3, int row, int col, char *words);
+bool is_valid(int *ptr_1, int *ptr_2, int *ptr_3, int row, int col, char grid[row][col], char *words);
+void place_word(int *ptr_1, int *ptr_2, int *ptr_3, int row, int col, char grid[row][col], char *words);
+
+int main()
+{
+    srand(time(NULL));
+    int n;
+    // declaring a array of strings
+    char *words[20];
+
+    printf("Specify the number of enteries: ");
+    scanf("%d", &n);
+    // dynamically allocating each string, 20 char of memory
+    for (int i = 0; i < n; i++)
+    {
+        words[i] = malloc(20 * sizeof(char));
+    }
+
+    init_words(words, n);
+    // prints the list of words
+    display_words(words, n);
+
+    // GRID
+    int r, c;
+    printf("Input the no of rows and columns in the grid (the no of rows and col should be greater than or equal to the longest string)\n");
+    scanf("%d %d", &r, &c);
+    char grid[r][c];
+
+    generate_grid(r, c, grid);
+    for (int i = 0; i < n; i++)
+    {
+        rand_val(r, c);
+        while (!(is_placable(ptr_1, ptr_2, ptr_3, r, c, words[i]) && is_valid(ptr_1, ptr_2, ptr_3, r, c, grid, words[i])))
+        {
+            rand_val(r, c);
+        }
+
+        place_word(ptr_1, ptr_2, ptr_3, r, c, grid, words[i]);
+
+        display_grid(r, c, grid);
+        printf("\n");
+    }
+    rand_fill(r, c, grid);
+    printf("Final Result:\n");
+    display_grid(r, c, grid);
+    return 0;
+}
+
+// func definitions
+//////////////////////////////////////////////
+/////////////////////////////////////////////
+////////////////////////////////////////////
+
+void init_words(char **words, int n)
+{
+
+    for (int i = 0; i < n; i++)
+    {
+        char name[20];
+        scanf("%s", name);
+        // copying the string stored in name into words[i]
+        strcpy(words[i], name);
+    }
+}
+
+void display_words(char **words, int n)
+{
+    for (int i = 0; i < n; i++)
+    {
+        printf("words[%d] : %s\n", i, words[i]);
+    }
+}
+
+void generate_grid(int row, int col, char grid[row][col])
+{
+    for (int i = 0; i < row + 1; i++)
+    {
+        for (int j = 0; j < col + 1; j++)
+        {
+            grid[i][j] = '-';
+        }
+    }
+}
+
+void rand_fill(int row, int col, char grid[row][col])
+{
+    for (int i = 0; i < row + 1; i++)
+    {
+        for (int j = 0; j < col + 1; j++)
+        {
+            if (grid[i][j] == '-')
+            {
+                char randomletter = 'a' + (rand() % 26);
+                grid[i][j] = randomletter;
+            }
+        }
+    }
+}
+
+void display_grid(int row, int col, char grid[row][col])
+{
+    for (int i = 1; i < row + 1; i++)
+    {
+        for (int j = 1; j < col + 1; j++)
+        {
+            printf("%c\t", grid[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+void rand_val(int row, int col)
+{
+
+    // *ptr_1 --> r to l -- 0  ; l-r -- 1; t-b --2; b-t -- 3
+    *ptr_1 = rand() % 4;
+    *ptr_2 = rand() % ((row) + 1 - 1) + 1;
+    *ptr_3 = rand() % ((col) + 1 - 1) + 1;
+    printf("dir: %d pos_x: %d pos_y: %d\n", *ptr_1, *ptr_2, *ptr_3);
+}
+
+bool is_placable(int *ptr_1, int *ptr_2, int *ptr_3, int row, int col, char *words)
+{
+    int len = strlen(words);
+    if (*ptr_1 == 0)
+    {
+        if ((col - *ptr_3) >= len)
+        {
+            printf("check for space is %d\n", (col - *ptr_3));
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else if (*ptr_1 == 1)
+    {
+        if ((*ptr_3) >= len)
+        {
+            printf("check for space is %d\n", (*ptr_3));
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else if (*ptr_1 == 2)
+    {
+        if ((row - *ptr_2) >= len)
+        {
+            printf("check for space is %d\n", (row - *ptr_2));
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else if (*ptr_1 == 3)
+    {
+        if ((*ptr_2) >= len)
+        {
+            printf("check for space is %d\n", (*ptr_2));
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else
+    {
+        return false;
+    }
+}
+
+// checking if the placement is valid, as in if it's overlaping other words on the grid or not
+bool is_valid(int *ptr_1, int *ptr_2, int *ptr_3, int row, int col, char grid[row][col], char *words)
+{
+    int len = strlen(words);
+
+    if (*ptr_1 == 0)
+    {
+        int j = 0;
+        bool flag = false;
+        for (int i = *ptr_3; i < (*ptr_3 + len); i++, j++)
+        {
+            if (grid[*ptr_3][i] == '-')
+            {
+                flag = true;
+                continue;
+            }
+            else if (*(words + j) != grid[*ptr_3][i])
+            {
+                flag = false;
+                break;
+            }
+            else if (*(words + j) == grid[*ptr_3][i])
+            {
+                flag = true;
+                continue;
+            }
+        }
+        if (flag == true)
+        {
+            printf("Is true\n");
+            return true;
+        }
+        else
+        {
+            printf("Is false\n");
+            return false;
+        }
+    }
+    else if (*ptr_1 == 1)
+    {
+        int j = 0;
+        bool flag = false;
+        for (int i = *ptr_3; (i > *ptr_3 - len) && (i > 0); i--, j++)
+        {
+            if (grid[*ptr_3][i] == '-')
+            {
+                flag = true;
+                continue;
+            }
+            else if (*(words + j) != grid[*ptr_3][i])
+            {
+                flag = false;
+                break;
+            }
+            else if (*(words + j) == grid[*ptr_3][i])
+            {
+                flag = true;
+                continue;
+            }
+        }
+        if (flag == true)
+        {
+            printf("Is true\n");
+            return true;
+        }
+        else
+        {
+            printf("Is false\n");
+            return false;
+        }
+    }
+    else if (*ptr_1 == 2)
+    {
+        int j = 0;
+        bool flag = false;
+        for (int i = *ptr_2; i < *ptr_2 + len; i++, j++)
+        {
+            if (grid[i][*ptr_2] == '-')
+            {
+                flag = true;
+                continue;
+            }
+            else if (*(words + j) != grid[i][*ptr_2])
+            {
+                flag = false;
+                break;
+            }
+            else if (*(words + j) == grid[i][*ptr_2])
+            {
+                flag = true;
+                continue;
+            }
+        }
+        if (flag == true)
+        {
+            printf("Is true\n");
+            return true;
+        }
+        else
+        {
+            printf("Is false\n");
+            return false;
+        }
+    }
+    else if (*ptr_1 == 3)
+    {
+        int j = 0;
+        bool flag = false;
+        for (int i = *ptr_2; (i > *ptr_2 - len) && (i > 0); i--, j++)
+        {
+            if (grid[i][*ptr_2] == '-')
+            {
+                flag = true;
+                continue;
+            }
+            else if (*(words + j) != grid[i][*ptr_2])
+            {
+                flag = false;
+                break;
+            }
+            else if (*(words + j) == grid[i][*ptr_2])
+            {
+                flag = true;
+                continue;
+            }
+        }
+        if (flag == true)
+        {
+            printf("Is true\n");
+            return true;
+        }
+        else
+        {
+            printf("Is false\n");
+            return false;
+        }
+    }
+}
+
+// placing just one word into the grid
+void place_word(int *ptr_1, int *ptr_2, int *ptr_3, int row, int col, char grid[row][col], char *words)
+{
+    int len = strlen(words);
+
+    if (*ptr_1 == 0)
+    {
+        int j = 0;
+        for (int i = *ptr_3; i < (*ptr_3 + len); i++, j++)
+        {
+            printf("pos_y: %d char printed : %c\n", i, *(words + j));
+            grid[*ptr_3][i] = *(words + j);
+        }
+    }
+    else if (*ptr_1 == 1)
+    {
+        int j = 0;
+        for (int i = *ptr_3; (i > *ptr_3 - len) && (i > 0); i--, j++)
+        {
+            printf("pos_y: %d char printed : %c\n", i, *(words + j));
+            grid[*ptr_3][i] = *(words + j);
+        }
+    }
+    else if (*ptr_1 == 2)
+    {
+        int j = 0;
+        for (int i = *ptr_2; i < *ptr_2 + len; i++, j++)
+        {
+            printf("pos_x: %d char printed : %c\n", i, *(words + j));
+            grid[i][*ptr_2] = *(words + j);
+        }
+    }
+    else if (*ptr_1 == 3)
+    {
+        int j = 0;
+        for (int i = *ptr_2; (i > *ptr_2 - len) && (i > 0); i--, j++)
+        {
+            printf("pos_x: %d char printed : %c\n", i, *(words + j));
+            grid[i][*ptr_2] = *(words + j);
+        }
+    }
+}
